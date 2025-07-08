@@ -3,8 +3,9 @@ import os
 def get_file_content(working_directory, file_path):
     full_path = os.path.join(working_directory, file_path)
 
-    if os.path.abspath(full_path).startswith(os.path.abspath(working_directory)) == False:
-        return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
+    allowed = os.path.commonpath([os.path.abspath(working_directory), os.path.abspath(full_path)]) == os.path.abspath(working_directory)
+    if not allowed:
+        return f'Error: Cannot execute "{file_path}" as it is outside the permitted working directory'
     
     if os.path.isfile(full_path) == False:
         return f'Error: File not found or is not a regular file: "{file_path}"'

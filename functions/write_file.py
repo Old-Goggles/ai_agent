@@ -3,7 +3,8 @@ import os
 def write_file(working_directory, file_path, content):
     full_path = os.path.join(working_directory, file_path)
 
-    if os.path.abspath(full_path).startswith(os.path.abspath(working_directory)) == False:
+    allowed = os.path.commonpath([os.path.abspath(working_directory), os.path.abspath(full_path)]) == os.path.abspath(working_directory)
+    if not allowed:
         return f'Error: Cannot write to "{file_path}" as it is outside the permitted working directory'
     
     try:
