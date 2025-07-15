@@ -3,6 +3,7 @@ import sys
 from google import genai
 from dotenv import load_dotenv
 from google.genai import types
+from functions.call_function import call_function
 from functions.write_file import schema_write_file
 from functions.get_files_info import schema_get_files_info
 from functions.run_python_file import schema_run_python_file
@@ -64,7 +65,13 @@ def main():
     
     if hasattr(response, "function_calls") and response.function_calls:
         for function_call_part in response.function_calls:
-            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+            function_call_result = call_function(function_call_part, verbose="--verbose" in sys.argv)
+    
+            if not hasattr(function_call_result, 'parts') or not function_call_result.parts:
+                raise Exception("Invalid function call result")
+    
+            if "--verbose" in sys.argv:
+                print(f"-> {function_call_result.parts[0].function_response.response}")
     else:
         print(response.text)
 
