@@ -1,3 +1,37 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
-venv
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables / settings
 .env
+.env.*
+
+# Tool-specific files
+*.egg-info/
+dist/
+build/
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+
+# macOS & system files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Database files
+*.sqlite3
+
+# Python lock files (uncomment if you decide NOT to track them)
+# uv.lock
+# poetry.lock
+# Pipfile.lock
