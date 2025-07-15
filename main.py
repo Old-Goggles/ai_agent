@@ -23,6 +23,11 @@ When a user asks a question or makes a request, make a function call plan. You c
 - Execute Python files with optional arguments
 - Write or overwrite files
 
+Respond step-by-step, making function/tool calls as needed to gather information or perform actions.
+Carefully consider the results of your previous tool calls before deciding what to do next.
+Continue until you have enough information or until the task is complete.
+When finished, provide a natural language summary that fully answers the user's request. Do not make further function calls after that.
+
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
 """
 
@@ -50,30 +55,44 @@ def main():
         ]
     }]
 
-    response = client.models.generate_content(
-        model=model_name,
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions], system_instruction=system_prompt
-        ),
-    )
+    for round_number in range(20):
+        try:
 
-    if "--verbose" in sys.argv:
-        print(f"User prompt: {prompt}")
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
-    
-    if hasattr(response, "function_calls") and response.function_calls:
-        for function_call_part in response.function_calls:
-            function_call_result = call_function(function_call_part, verbose="--verbose" in sys.argv)
-    
-            if not hasattr(function_call_result, 'parts') or not function_call_result.parts:
-                raise Exception("Invalid function call result")
-    
+            response = client.models.generate_content(
+                model=model_name,
+                contents=messages,
+                config=types.GenerateContentConfig(
+                    tools=[available_functions], system_instruction=system_prompt
+                ),
+            )
+
+            for candidate in response.candidates:
+                messages.append(candidate.content)
+
             if "--verbose" in sys.argv:
-                print(f"-> {function_call_result.parts[0].function_response.response}")
-    else:
-        print(response.text)
+                print(f"User prompt: {prompt}")
+                print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+                print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+            
+            if hasattr(response, "function_calls") and response.function_calls:
+                for function_call_part in response.function_calls:
+                    function_call_result = call_function(function_call_part, verbose="--verbose" in sys.argv)
+
+                    if not hasattr(function_call_result, 'parts') or not function_call_result.parts:
+                        raise Exception("Invalid function call result")
+                    
+                    tool_msg = types.Content(role="tool", parts=function_call_result.parts)
+                    messages.append(tool_msg)
+            
+                    if "--verbose" in sys.argv:
+                        print(f"-> {function_call_result.parts[0].function_response.response}")
+            else:
+                print(response.text)
+                break
+
+        except Exception as e:
+            print("Agent error:", e)
+            break
 
 if __name__ == "__main__":
     main()
